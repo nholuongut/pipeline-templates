@@ -1,0 +1,21 @@
+parameters:
+  - name: dockerfilePath
+    default: "**/Dockerfile"
+  - name: dockerBuildArguments
+    type: string
+    default: ""
+
+jobs:
+  - job: Build
+    displayName: Build Docker Image
+    steps:
+      - checkout: self
+        displayName: Perform shallow checkout
+        fetchDepth: 1
+
+      - task: Docker@2
+        displayName: Build docker image
+        inputs:
+          command: build
+          Dockerfile: ${{parameters.dockerfilePath}}
+          arguments: ${{parameters.dockerBuildArguments}}

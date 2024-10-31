@@ -1,0 +1,112 @@
+parameters:
+  - name: terraformWorkingDirectory
+    type: string
+    default: $(System.DefaultWorkingDirectory)/terraform
+  - name: terraformVersion
+    type: string
+    default: 1.7.5
+  - name: initCommandOptions
+    type: string
+    default: ""
+
+  - name: backendServiceArm
+    type: string
+    default: ""
+  - name: backendAzureRmResourceGroupName
+    type: string
+    default: ""
+  - name: backendAzureRmStorageAccountName
+    type: string
+    default: ""
+  - name: backendAzureRmContainerName
+    type: string
+    default: ""
+  - name: backendAzureRmKey
+    type: string
+    default: ""
+
+  - name: backendServiceAWS
+    type: string
+    default: ""
+  - name: backendAWSBucketName
+    type: string
+    default: ""
+  - name: backendAWSKey
+    type: string
+    default: ""
+
+  - name: environmentServiceNameAzureRM
+    type: string
+    default: ""
+  - name: environmentServiceNameAWS
+    type: string
+    default: ""
+
+  - name: terraformCommand
+    type: string
+    default: validate
+  - name: commandOptions
+    type: string
+    default: ""
+
+jobs:
+  - job: ValidateTerraform
+    displayName: ValidateTerraform
+    steps:
+      - checkout: self
+        displayName: Perform shallow checkout
+        fetchDepth: 1
+
+      - task: TerraformInstaller@0
+        displayName: Terraform Install version ${{parameters.terraformVersion}}
+        inputs:
+          terraformVersion: ${{parameters.terraformVersion}}
+
+      - task: TerraformTaskV4@4
+        displayName: "Terraform Initialize"
+        inputs:
+          command: "init"
+          commandOptions: ${{parameters.initCommandOptions}}
+          workingDirectory: ${{parameters.terraformWorkingDirectory}}
+          ${{ if ne(parameters.backendServiceArm, '') }}:
+            provider: azurerm
+            backendServiceArm: ${{parameters.backendServiceArm}}
+            backendAzureRmResourceGroupName: ${{parameters.backendAzureRmResourceGroupName}}
+            backendAzureRmStorageAccountName: ${{parameters.backendAzureRmStorageAccountName}}
+            backendAzureRmContainerName: ${{parameters.backendAzureRmContainerName}}
+            backendAzureRmKey: ${{parameters.backendAzureRmKey}}
+          ${{ if ne(parameters.backendServiceAWS, '') }}:
+            provider: aws
+            backendServiceAWS: ${{parameters.backendServiceAWS}}
+            backendAWSBucketName: ${{parameters.backendAWSBucketName}}
+            backendAWSKey: ${{parameters.backendAWSKey}}
+
+      - task: TerraformTaskV4@4
+        displayName: "Terraform Validate"
+        inputs:
+          command: "validate"
+          workingDirectory: ${{ parameters.terraformWorkingDirectory }}
+
+      - task: TerraformTaskV4@4
+        displayName: "Terraform ${{ parameters.terraformCommand }}"
+        condition: ne('${{parameters.terraformCommand}}', 'validate')
+        inputs:
+          command: ${{ parameters.terraformCommand }}
+          commandOptions: ${{ parameters.commandOptions }}
+          workingDirectory: ${{ parameters.terraformWorkingDirectory }}
+          ${{ if ne(parameters.environmentServiceNameAzureRM, '') }}:
+            environmentServiceNameAzureRM: ${{parameters.environmentServiceNameAzureRM}}
+          ${{ if ne(parameters.environmentServiceNameAWS, '') }}:
+            environmentServiceNameAWS: ${{ parameters.environmentServiceNameAWS }}
+          ${{ if ne(parameters.backendServiceArm, '') }}:
+            provider: azurerm
+            backendServiceArm: ${{parameters.backendServiceArm}}
+            backendAzureRmResourceGroupName: ${{parameters.backendAzureRmResourceGroupName}}
+            backendAzureRmStorageAccountName: ${{parameters.backendAzureRmStorageAccountName}}
+            backendAzureRmContainerName: ${{parameters.backendAzureRmContainerName}}
+            backendAzureRmKey: ${{parameters.backendAzureRmKey}}
+          ${{ if ne(parameters.backendServiceAWS, '') }}:
+            provider: aws
+            backendServiceAWS: ${{parameters.backendServiceAWS}}
+            backendAWSBucketName: ${{parameters.backendAWSBucketName}}
+            backendAWSKey: ${{parameters.backendAWSKey}}

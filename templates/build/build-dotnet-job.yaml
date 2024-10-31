@@ -1,0 +1,37 @@
+parameters:
+  - name: dotNetVersion
+    type: string
+    default: "8.0.x"
+  - name: projectPath
+    type: string
+  - name: buildConfiguration
+    type: string
+    default: "Release"
+
+jobs:
+  - job: Build
+    displayName: Build
+    steps:
+      - checkout: self
+        displayName: Perform shallow checkout
+        fetchDepth: 1
+
+      - task: UseDotNet@2
+        displayName: Use .NET ${{parameters.dotNetVersion}} SDK
+        inputs:
+          packageType: "sdk"
+          version: ${{parameters.dotNetVersion}}
+
+      - task: DotNetCoreCLI@2
+        displayName: Build
+        inputs:
+          command: "build"
+          arguments: "--configuration ${{parameters.buildConfiguration}}"
+          projects: ${{parameters.projectPath}}
+
+      - task: BuildQualityChecks@8
+        displayName: "Check build quality"
+        inputs:
+          checkWarnings: true
+          warningFailOption: build
+          showStatistics: true

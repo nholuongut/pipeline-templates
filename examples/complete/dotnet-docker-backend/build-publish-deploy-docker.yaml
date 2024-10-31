@@ -1,0 +1,53 @@
+trigger:
+  - develop
+  - release/*
+  - hotfix/*
+
+pool:
+  vmImage: ubuntu-latest
+
+parameters:
+  - name: overrideDeployStageCheck
+    displayName: Override the run of deployments stages regardless of the branch.
+    type: boolean
+    default: false
+
+resources:
+  repositories:
+    - repository: pipeline-templates
+      name: nventive/pipeline-templates
+      endpoint: github.com
+      # We recommend pinning the template to a specific version
+      # ref: refs/tags/1.0.0
+      type: github
+
+variables:
+  - template: templates/variables/pipeline-variables.yaml@pipeline-templates
+  - name: overrideDeployStageCheckVariable
+    value: ${{ parameters.overrideDeployStageCheck }}
+  - name: isDeployable
+    value: $[or(
+      eq(variables.isDevelopBranch, true),
+      eq(variables.isReleaseBranch, true),
+      eq(variables.isHotFixBranch, true),
+      eq(variables.overrideDeployStageCheckVariable, true))]
+
+stages:
+  - stage: BuildTest
+    displayName: Build and Test Stage
+    jobs:
+      - template: templates/build/build-test-dotnet-job.yaml@pipeline-templates
+        parameters:
+          projectPath: $(projectPath)
+          projectsToTest: $(projectsToTest)
+
+  - stage: Publish
+    displayName: Build and publish Docker image
+    dependsOn: BuildTest
+    condition: and(succeeded(), eq(variables.isDeployable, true))
+    jobs:
+      - template: templates/build/build-push-docker-job.yaml@pipeline-templates
+        parameters:
+          dockerRegistryServiceConnection: $(dockerSerivceConnection)
+          imageRepository: $(imageRepository)
+          tag: $(imageTag)

@@ -1,0 +1,9 @@
+variables:
+  - name: isDevelopBranch
+    value: $[eq(variables['Build.SourceBranch'], 'refs/heads/develop')]
+  - name: isMainBranch
+    value: $[eq(variables['Build.SourceBranch'], 'refs/heads/main')]
+  - name: isReleaseBranch
+    value: $[startsWith(variables['Build.SourceBranch'], 'refs/heads/release/')]
+  - name: isHotFixBranch
+    value: $[startsWith(variables['Build.SourceBranch'], 'refs/heads/hotfix/')]

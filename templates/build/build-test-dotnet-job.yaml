@@ -1,0 +1,53 @@
+parameters:
+  - name: dotNetVersion
+    type: string
+    default: "8.0.x"
+  - name: projectPath
+    type: string
+  - name: buildConfiguration
+    type: string
+    default: "Release"
+  - name: projectsToTest
+    type: string
+    default: "$(Build.SourcesDirectory)/src/*Tests/*.csproj"
+
+jobs:
+  - job: BuildTest
+    displayName: Build and run tests
+    steps:
+      - checkout: self
+        displayName: Perform shallow checkout
+        fetchDepth: 1
+
+      - task: UseDotNet@2
+        displayName: Use .NET ${{parameters.dotNetVersion}} SDK
+        inputs:
+          packageType: "sdk"
+          version: ${{parameters.dotNetVersion}}
+
+      - task: DotNetCoreCLI@2
+        displayName: Build
+        inputs:
+          command: "build"
+          arguments: "--configuration ${{parameters.buildConfiguration}}"
+          projects: ${{parameters.projectPath}}
+
+      - task: BuildQualityChecks@8
+        displayName: "Check build quality"
+        inputs:
+          checkWarnings: true
+          warningFailOption: build
+          showStatistics: true
+
+      - task: DotNetCoreCLI@2
+        displayName: "Run tests"
+        inputs:
+          command: "test"
+          projects: $(projectsToTest)
+          arguments: '--configuration ${{parameters.buildConfiguration}} --collect "XPlat Code Coverage"'
+          publishTestResults: true
+
+      - task: PublishCodeCoverageResults@2
+        displayName: "Publish Code Coverage"
+        inputs:
+          summaryFileLocation: $(Agent.TempDirectory)/*/coverage.cobertura.xml

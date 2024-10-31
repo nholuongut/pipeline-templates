@@ -1,0 +1,36 @@
+trigger: none
+
+resources:
+  repositories:
+    - repository: pipeline-templates
+      name: nholuongut/pipeline-templates
+      type: github
+      # Service Connection Name
+      endpoint: github.com
+      # We recommend pinning the template to a specific version
+      # ref: refs/tags/1.0.0
+
+stages:
+  - stage: ValidateTerraform
+    displayName: Validate Terraform Azure Backend
+    jobs:
+      - template: templates/terraform-job.yaml@pipeline-templates
+        parameters:
+          backendServiceArm: $(backendServiceArm)
+          backendAzureRmResourceGroupName: $(backendAzureRmResourceGroupName)
+          backendAzureRmStorageAccountName: $(backendAzureRmStorageAccountName)
+          backendAzureRmContainerName: $(backendAzureRmContainerName)
+          backendAzureRmKey: $(backendAzureRmKey)
+          environmentServiceNameAzureRM: $(backendServiceArm)
+          terraformCommand: apply
+
+  - stage: ValidateTerraformAWS
+    displayName: Validate Terraform AWS Backend
+    jobs:
+      - template: templates/terraform-job.yaml@pipeline-templates
+        parameters:
+          backendServiceAWS: $(backendServiceAWS)
+          backendAWSBucketName: $(backendAWSBucketName)
+          backendAWSKey: $(backendAWSKey)
+          environmentServiceNameAWS: $(backendServiceAWS)
+          terraformCommand: apply

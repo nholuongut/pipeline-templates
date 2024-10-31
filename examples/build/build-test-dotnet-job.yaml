@@ -1,0 +1,29 @@
+trigger: none
+
+resources:
+  repositories:
+    - repository: pipeline-templates
+      name: nholuongut/pipeline-templates
+      type: github
+      # Service Connection Name
+      endpoint: github.com
+      # We recommend pinning the template to a specific version
+      # ref: refs/tags/1.0.0
+
+variables:
+  - name: dotNetVersion
+    value: 8.0.x
+  - name: projectPath
+    value: $(Build.SourcesDirectory)/dotnet/src/Api/Api.csproj
+  - name: projectsToTest
+    value: $(Build.SourcesDirectory)/dotnet/src/*Tests/*.csproj
+
+stages:
+  - stage: BuildTest
+    displayName: Build and Test Stage
+    jobs:
+      - template: templates/build/build-test-dotnet-job.yaml@pipeline-templates
+        parameters:
+          dotNetVersion: $(dotNetVersion)
+          projectPath: $(projectPath)
+          projectsToTest: $(projectsToTest)
